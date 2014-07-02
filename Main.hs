@@ -5,11 +5,13 @@ import Control.Monad
 import Control.Exception
 import Data.Char
 import Data.List
+import Data.Array
+import System.Random
+import Control.Monad.State
 
 default (Int, Double)
 
 data Cell a = CellContent a deriving Show
-
 data Grid a = Content [[ a ]] deriving Show
 
 showcell :: (Show a) => Cell a -> String
@@ -31,14 +33,33 @@ getKeystroke = do
   x <- withEcho False getChar
   return $ ord x
 
-makeMap :: Grid (Cell Char)
-makeMap = Content [ [ CellContent 'a' | _ <- [0..(5 :: Int)] ] | _ <- [0..5 :: Int] ]
+{-
+addRoom :: [[ Char ]] -> [[ Char ]]
+addRoom grid =
+    grid // [((x, y), '_') | x <- [roomX..roomX + roomW], y <- [roomY..roomY + roomH]]
+  where
+    roomX :: Int = 0
+    roomY :: Int = 0
+    roomW :: Int = 4
+    roomH :: Int = 4
+-}
+
+makeMap :: Int -> Grid (Cell Char)
+makeMap size =
+    Content (map2 CellContent mapWithRooms)
+  where
+    adjustedSize :: Int = size - 1
+    numRooms :: Int = 8
+    emptyMap :: [[ Char ]] = [[ 'X' | _ <- [0..adjustedSize]] | _ <- [0..adjustedSize]]
+    mapWithRooms :: [[ Char ]] = (iterate addRoom emptyMap) !! numRooms
 
 main :: IO ()
 main = do
+  g <- newStdGen
+
   hSetBuffering stdin NoBuffering
 
-  let gamemap = makeMap
+  let gamemap :: Grid (Cell Char) = makeMap 20
   putStrLn $ showmap gamemap
 
   --forever $ (getKeystroke >>= (\x -> return $ show x) >>= putStrLn)
