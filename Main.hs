@@ -7,13 +7,18 @@ import Data.Char
 
 default (Int, Double)
 
-data (Show a) => Cell a = CellContent a
-data (Cell a) => Grid a = Content [[a]]
+data Cell a = CellContent a
 
-instance (Show a) => Show (Grid a) where
-   show (Content blar) =
-     unlines $ map (\row -> (map intToDigit row)) blar
+data Grid a = Content [[ a ]]
 
+showcell :: (Show a) => Cell a -> String
+showcell (CellContent a) = show a
+
+showmap :: (Show a) => Grid (Cell a) -> String
+showmap (Content grid) = unlines $ map unwords $ map2 showcell grid
+
+map2 :: (a -> b) -> [[a]] -> [[b]]
+map2 fn list = map (\row -> (map fn row)) list
 
 withEcho :: Bool -> IO a -> IO a
 withEcho echo action = do
@@ -25,14 +30,14 @@ getKeystroke = do
   x <- withEcho False getChar
   return $ ord x
 
-makeMap :: Int -> Grid Int
-makeMap a = Content [[a | _ <- [0..(5 :: Int)]] | _ <- [0..5 :: Int]]
+makeMap :: Grid (Cell Char)
+makeMap = Content [ [ CellContent 'a' | _ <- [0..(5 :: Int)] ] | _ <- [0..5 :: Int] ]
 
 main :: IO ()
 main = do
   hSetBuffering stdin NoBuffering
 
-  let gamemap = makeMap 0
-  putStrLn $ show gamemap
+  let gamemap = makeMap
+  putStrLn $ showmap gamemap
 
   --forever $ (getKeystroke >>= (\x -> return $ show x) >>= putStrLn)
