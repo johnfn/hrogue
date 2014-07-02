@@ -4,18 +4,19 @@ import System.IO
 import Control.Monad
 import Control.Exception
 import Data.Char
+import Data.List
 
 default (Int, Double)
 
-data Cell a = CellContent a
+data Cell a = CellContent a deriving Show
 
-data Grid a = Content [[ a ]]
+data Grid a = Content [[ a ]] deriving Show
 
 showcell :: (Show a) => Cell a -> String
-showcell (CellContent a) = show a
+showcell (CellContent a) = take 1 $ drop 1 $ show a
 
 showmap :: (Show a) => Grid (Cell a) -> String
-showmap (Content grid) = unlines $ map unwords $ map2 showcell grid
+showmap (Content grid) = unlines $ map (intercalate "") $ map2 showcell grid
 
 map2 :: (a -> b) -> [[a]] -> [[b]]
 map2 fn list = map (\row -> (map fn row)) list
