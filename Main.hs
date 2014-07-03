@@ -1,27 +1,42 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 import System.IO
-import Control.Monad
 import Control.Exception
 import Data.Char
 import Data.List
+import Control.Monad
 import System.Random
 import Control.Monad.State
 
 default (Int, Double)
 
-data Rect = R Int Int Int Int
+data Rect = Rect Int Int Int Int
 data Cell a = CellContent a deriving Show
 data Grid a = Content [[ a ]] deriving Show
+data Player = Player Int Int
+
+data Game = Game (Grid (Cell Char)) Player
+
+shownoquotes :: (Show a) => a -> String
+shownoquotes a = take 1 $ drop 1 $ show a
 
 showcell :: (Show a) => Cell a -> String
-showcell (CellContent a) = take 1 $ drop 1 $ show a
+showcell (CellContent a) = shownoquotes a
+
+show2 :: (Show a) => [[ a ]] -> String
+show2 grid = unlines $ map (intercalate "") (map (map shownoquotes) grid)
+
+extractCell :: Cell a -> a
+extractCell (CellContent a) = a
 
 showmap :: (Show a) => Grid (Cell a) -> String
-showmap (Content grid) = unlines $ map (intercalate "") $ map2 showcell grid
+showmap (Content grid) = show2 $ map2 showcell grid
 
 map2 :: (a -> b) -> [[a]] -> [[b]]
 map2 fn list = map (\row -> (map fn row)) list
+
+get2 :: [[a]] -> Int -> Int -> a
+get2 grid i j = (grid !! i) !! j
 
 withEcho :: Bool -> IO a -> IO a
 withEcho echo action = do
@@ -33,23 +48,12 @@ getKeystroke = do
   x <- withEcho False getChar
   return $ ord x
 
-{-
-addRoom :: [[ Char ]] -> [[ Char ]]
-addRoom grid =
-    grid // [((x, y), '_') | x <- [roomX..roomX + roomW], y <- [roomY..roomY + roomH]]
-  where
-    roomX :: Int = 0
-    roomY :: Int = 0
-    roomW :: Int = 4
-    roomH :: Int = 4
--}
-
 rectContainsPoint :: Int -> Int -> Rect -> Bool
-rectContainsPoint px py (R x y w h) =
+rectContainsPoint px py (Rect x y w h) =
   (px >= x) && (px <= (x + w)) && (py >= y) && (py <= (y + h))
 
 makeRooms :: [ Rect ]
-makeRooms = [ R 1 1 3 3, R 4 4 3 3 ]
+makeRooms = [ Rect 1 1 3 3, Rect 4 4 3 3 ]
 
 getMapChar :: Int -> Int -> [ Rect ] -> Char
 getMapChar x y rooms =
@@ -62,13 +66,26 @@ makeMap size =
     rooms = makeRooms
     mapWithRooms :: [[ Char ]] = [[(getMapChar x y rooms) | x <- [0..10]] | y <- [0..10]]
 
+makePlayer :: Player
+makePlayer = Player 4 4
+
+makeGame :: Game
+makeGame = Game (makeMap 10) makePlayer
+
+renderGame :: Game -> String
+renderGame (Game (Content mapList) (Player px py)) =
+    show2 [[(renderChar x y) | x <- [0..10]] | y <- [0..10]]
+  where
+    bareMap = map2 extractCell mapList
+    renderChar x y = if (px == x && py == y) then '@' else get2 bareMap x y
+
+
 main :: IO ()
 main = do
-  --  g <- newStdGen
-
   hSetBuffering stdin NoBuffering
 
-  let gamemap :: Grid (Cell Char) = makeMap 20
-  putStrLn $ showmap gamemap
+  let game = makeGame
+  putStrLn $ renderGame game
+  --putStrLn $ showmap gamemap
 
   --forever $ (getKeystroke >>= (\x -> return $ show x) >>= putStrLn)
