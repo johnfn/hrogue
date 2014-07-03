@@ -5,12 +5,12 @@ import Control.Monad
 import Control.Exception
 import Data.Char
 import Data.List
-import Data.Array
 import System.Random
 import Control.Monad.State
 
 default (Int, Double)
 
+data Rect = R Int Int Int Int
 data Cell a = CellContent a deriving Show
 data Grid a = Content [[ a ]] deriving Show
 
@@ -44,18 +44,27 @@ addRoom grid =
     roomH :: Int = 4
 -}
 
+rectContainsPoint :: Int -> Int -> Rect -> Bool
+rectContainsPoint px py (R x y w h) =
+  (px >= x) && (px <= (x + w)) && (py >= y) && (py <= (y + h))
+
+makeRooms :: [ Rect ]
+makeRooms = [ R 1 1 3 3, R 4 4 3 3 ]
+
+getMapChar :: Int -> Int -> [ Rect ] -> Char
+getMapChar x y rooms =
+  if or (map (rectContainsPoint x y) rooms) then '_' else '#'
+
 makeMap :: Int -> Grid (Cell Char)
 makeMap size =
     Content (map2 CellContent mapWithRooms)
   where
-    adjustedSize :: Int = size - 1
-    numRooms :: Int = 8
-    emptyMap :: [[ Char ]] = [[ 'X' | _ <- [0..adjustedSize]] | _ <- [0..adjustedSize]]
-    mapWithRooms :: [[ Char ]] = (iterate addRoom emptyMap) !! numRooms
+    rooms = makeRooms
+    mapWithRooms :: [[ Char ]] = [[(getMapChar x y rooms) | x <- [0..10]] | y <- [0..10]]
 
 main :: IO ()
 main = do
-  g <- newStdGen
+  --  g <- newStdGen
 
   hSetBuffering stdin NoBuffering
 
