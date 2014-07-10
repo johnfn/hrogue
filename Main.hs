@@ -59,6 +59,9 @@ getMapChar :: Int -> Int -> [ Rect ] -> Char
 getMapChar x y rooms =
   if or (map (rectContainsPoint x y) rooms) then '_' else '#'
 
+iterateM :: Monad m => (a -> m a) -> a -> m b
+iterateM f a = f a >>= iterateM f
+
 makeMap :: Int -> Grid (Cell Char)
 makeMap size =
     Content (map2 CellContent mapWithRooms)
@@ -80,12 +83,28 @@ renderGame (Game (Content mapList) (Player px py)) =
     renderChar x y = if (px == x && py == y) then '@' else get2 bareMap x y
 
 
+gameLoop :: Int -> IO ()
+gameLoop state = do
+    print state
+    key <- getKeystroke
+    gameLoop (updateState state key)
+  where
+    updateState state 119 {-W-}= state + 1
+    updateState state 97  {-A-}= state - 1
+
 main :: IO ()
 main = do
   hSetBuffering stdin NoBuffering
 
   let game = makeGame
-  putStrLn $ renderGame game
+  print $ renderGame game
   --putStrLn $ showmap gamemap
 
-  --forever $ (getKeystroke >>= (\x -> return $ show x) >>= putStrLn)
+  {- WASD
+  119
+  97
+  115
+  100 
+  -}
+
+  gameLoop 0
