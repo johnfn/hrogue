@@ -13,7 +13,7 @@ default (Int, Double)
 data Rect = Rect Int Int Int Int
 data Cell a = CellContent a deriving Show
 data Grid a = Content [[ a ]] deriving Show
-data Player = Player Int Int
+data Player = Player Int Int deriving Show
 
 data Game = Game (Grid (Cell Char)) Player
 
@@ -83,14 +83,14 @@ renderGame (Game (Content mapList) (Player px py)) =
     renderChar x y = if (px == x && py == y) then '@' else get2 bareMap x y
 
 
-gameLoop :: Int -> IO ()
-gameLoop state = do
-    print state
+gameLoop :: Player -> IO ()
+gameLoop p@(Player x y) = do
+    print p
     key <- getKeystroke
-    gameLoop (updateState state key)
+    gameLoop (updateState p key)
   where
-    updateState state 119 {-W-}= state + 1
-    updateState state 97  {-A-}= state - 1
+    updateState state 119 {-W-}= Player x (y - 1)
+    updateState state 97  {-A-}= Player (x - 1) y
 
 main :: IO ()
 main = do
@@ -107,4 +107,4 @@ main = do
   100 
   -}
 
-  gameLoop 0
+  gameLoop (Player 0 0)
